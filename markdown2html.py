@@ -22,10 +22,12 @@ try:
 
         # convert markdown to html
         html_content = ""
-        
+        in_list = False # flag to check if we are inside an unordered list
+
         for line in lines:
             stripped_line = line.strip()
 
+            # check for headings
             if stripped_line.startswith("#"):
                 # count the number of '#' at the start
                 heading_level = len(stripped_line.split()[0])
@@ -33,9 +35,28 @@ try:
                     heading_text = stripped_line[heading_level:].strip()
                     html_content += f"<h{heading_level}>{heading_text}</h{heading_level}>\n"
 
+                #if a heading is found and we are in a list, close the list
+                if in_list:
+                    html_content += "</ul>\n"
+                    in_list = False
+
+            #check for list items
+            elif stripped_line.startswith("- "):
+                if not in_list:
+                    html_content += "<ul>\n"
+                    in_list = True
+                list_item = stripped_line[2:].strip()
+                html_content += f"  <li>{list_item}</li>\n"
+
             else:
-                # if it is not a heading, add line as is or skip if the specification says so
-                continue
+                # if we encounter a non-list and non-heading line, we are in a list, close the list
+                if in_list:
+                    html_content += "</ul>\n"
+                    in_list = False
+
+        # if the file ends while still inside a list, close the list
+        if in_list:
+            html_content += "</ul>\n"
         
         # write the html content to the html_file
         with open(html_file, 'w') as html:
