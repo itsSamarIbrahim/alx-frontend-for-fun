@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import os
-
+import re
 
 # check the number of args
 if len(sys.argv) < 3:
@@ -15,6 +15,14 @@ html_file = sys.argv[2]
 if not os.path.exists(md_file):
     sys.stderr.write(f"Missing {md_file}\n")
     sys.exit(1)
+
+# convert bold and italic
+def convert_bold_and_italic(text):
+    # convert bold (**text**) to <b>text</b>
+    text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', text)
+    # convert italic (__text__) to <em>text</em>
+    text = re.sub(r'__(.*?)__', r'<em>\1</em>', text)
+    return text
 
 # read the markdown file and parse headings
 try:
@@ -37,6 +45,7 @@ try:
                 heading_level = len(stripped_line.split()[0])
                 if 1 <= heading_level <= 6:
                     heading_text = stripped_line[heading_level:].strip()
+                    heading_text = convert_bold_and_italic(heading_text)
                     html_content += f"<h{heading_level}>{heading_text}</h{heading_level}>\n"
 
                 # close any open list or paragraph before processing a heading
@@ -68,6 +77,7 @@ try:
                     html_content += "<ul>\n"
                     in_unordered_list = True
                 list_item = stripped_line[2:].strip()
+                list_item = convert_bold_and_italic(list_item)
                 html_content += f"  <li>{list_item}</li>\n"
 
             # check for ordered list items
@@ -84,6 +94,7 @@ try:
                     html_content += "<ol>\n"
                     in_ordered_list = True
                 list_item = stripped_line[2:].strip()
+                list_item = convert_bold_and_italic(list_item)
                 html_content += f"  <li>{list_item}</li>\n"
 
             # check for paragraph text
@@ -98,9 +109,9 @@ try:
                             html_content += "</ol>\n"
                             in_ordered_list = False
                         in_paragraph = True
-                        current_paragraph = stripped_line
+                        current_paragraph = convert_bold_and_italic(stripped_line)
                     else:
-                        current_paragraph += f"\n{stripped_line}"
+                        current_paragraph += f"\n{convert_bold_and_italic(stripped_line)}"
                 else: # empty line indicates the end of a paragraph
                     if in_paragraph:
                         # split the paragraph text into lines and indent each line
@@ -125,7 +136,6 @@ try:
 except Exception as e:
     sys.stderr.write(f"Error: {e}\n")
     sys.exit(1)
-
 
 # if all is good, exit with code 0
 sys.exit(0)
