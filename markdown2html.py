@@ -2,10 +2,9 @@
 """
 A python script to convert markdown files to HTML files.
 """
-
-
 import sys
 import os
+
 
 # Step 1: Check the number of arguments
 if len(sys.argv) < 3:
