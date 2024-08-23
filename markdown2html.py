@@ -1,97 +1,173 @@
-#!/usr/bin/python3
-
+#!/usr/bin/env python3
 """
-Markdown script using python.
+A python script to convert markdown files to html files
 """
 import sys
-import os.path
+import os
 import re
 import hashlib
 
+
 if __name__ == '__main__':
+    # check the number of args
     if len(sys.argv) < 3:
-        print('Usage: ./markdown2html.py README.md README.html',
-              file=sys.stderr)
-        exit(1)
+        sys.stderr.write("Usage: ./markdown2html.py README.md README.html\n")
+        sys.exit(1)
 
-    if not os.path.isfile(sys.argv[1]):
-        print('Missing {}'.format(sys.argv[1]), file=sys.stderr)
-        exit(1)
+    # check id the markdown file exists
+    md_file = sys.argv[1]
+    html_file = sys.argv[2]
 
-    with open(sys.argv[1]) as read:
-        with open(sys.argv[2], 'w') as html:
-            unordered_start, ordered_start, paragraph = False, False, False
-            # bold syntax
-            for line in read:
-                line = line.replace('**', '<b>', 1)
-                line = line.replace('**', '</b>', 1)
-                line = line.replace('__', '<em>', 1)
-                line = line.replace('__', '</em>', 1)
+    if not os.path.exists(md_file):
+        sys.stderr.write(f"Missing {md_file}\n")
+        sys.exit(1)
 
-                # md5
-                md5 = re.findall(r'\[\[.+?\]\]', line)
-                md5_inside = re.findall(r'\[\[(.+?)\]\]', line)
-                if md5:
-                    line = line.replace(md5[0], hashlib.md5(
-                        md5_inside[0].encode()).hexdigest())
+    def convert_bold_and_italic(text):
+        """convert bold and italic function"""
+        # convert bold (**text**) to <b>text</b>
+        text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', text)
+        # convert italic (__text__) to <em>text</em>
+        text = re.sub(r'__(.*?)__', r'<em>\1</em>', text)
+        return text
 
-                # remove the letter C
-                remove_letter_c = re.findall(r'\(\(.+?\)\)', line)
-                remove_c_more = re.findall(r'\(\((.+?)\)\)', line)
-                if remove_letter_c:
-                    remove_c_more = ''.join(
-                        c for c in remove_c_more[0] if c not in 'Cc')
-                    line = line.replace(remove_letter_c[0], remove_c_more)
+    def replace_md5(text):
+        """replace [[text]] with MD5 hash"""
+        return re.sub(r'\[\[(.*?)\]\]', lambda match: hashlib.md5(
+            match.group(1).encode()).hexdigest(), text)
 
-                length = len(line)
-                headings = line.lstrip('#')
-                heading_num = length - len(headings)
-                unordered = line.lstrip('-')
-                unordered_num = length - len(unordered)
-                ordered = line.lstrip('*')
-                ordered_num = length - len(ordered)
-                # headings, lists
-                if 1 <= heading_num <= 6:
-                    line = '<h{}>'.format(
-                        heading_num) + headings.strip() + '</h{}>\n'.format(
-                        heading_num)
+    def remove_c(text):
+        """remove all c (case insensitive) from the content ((text))"""
+        return re.sub(r'\(\((.*?)\)\)', lambda match: match.group(1)
+                      .replace('c', '').replace('C', ''), text)
 
-                if unordered_num:
-                    if not unordered_start:
-                        html.write('<ul>\n')
-                        unordered_start = True
-                    line = '<li>' + unordered.strip() + '</li>\n'
-                if unordered_start and not unordered_num:
-                    html.write('</ul>\n')
-                    unordered_start = False
+    # read the markdown file and parse headings
+    try:
+        with open(md_file, 'r') as md:
+            lines = md.readlines()
 
-                if ordered_num:
-                    if not ordered_start:
-                        html.write('<ol>\n')
-                        ordered_start = True
-                    line = '<li>' + ordered.strip() + '</li>\n'
-                if ordered_start and not ordered_num:
-                    html.write('</ol>\n')
-                    ordered_start = False
+            # convert markdown to html
+            html_content = ""
+            # flag to check if we are inside an unordered list:
+            in_unordered_list = False
+            # flag to check if we are inside an ordered list
+            in_ordered_list = False
+            # flag to check if we are inside a paragraph
+            in_paragraph = False
+            current_paragraph = ""
 
-                if not (heading_num or unordered_start or ordered_start):
-                    if not paragraph and length > 1:
-                        html.write('<p>\n')
-                        paragraph = True
-                    elif length > 1:
-                        html.write('<br/>\n')
-                    elif paragraph:
-                        html.write('</p>\n')
-                        paragraph = False
+            for line in lines:
+                stripped_line = line.strip()
+                stripped_line = convert_bold_and_italic(stripped_line)
+                stripped_line = replace_md5(stripped_line)
+                stripped_line = remove_c(stripped_line)
 
-                if length > 1:
-                    html.write(line)
+                # check for headings
+                if stripped_line.startswith("#"):
+                    # count the number of '#' at the start
+                    heading_level = len(stripped_line.split()[0])
+                    if 1 <= heading_level <= 6:
+                        heading_text = stripped_line[heading_level:].strip()
+                        html_content += f"<h{heading_level}>\
+                                        {heading_text}</h{heading_level}>\n"
 
-            if unordered_start:
-                html.write('</ul>\n')
-            if ordered_start:
-                html.write('</ol>\n')
-            if paragraph:
-                html.write('</p>\n')
-    exit (0)
-    
+                    # close any open list or paragraph
+                    # before processing a heading
+                    if in_unordered_list:
+                        html_content += "</ul>\n"
+                        in_unordered_list = False
+
+                    if in_ordered_list:
+                        html_content += "</ol>\n"
+                        in_ordered_list = False
+
+                    if in_paragraph:
+                        lines_in_paragraph = "\n\t<br />\n\t".join(
+                            current_paragraph.split("\n"))
+                        html_content += f"<p>\n\t{lines_in_paragraph}\n</p>\n"
+                        in_paragraph = False
+                        current_paragraph = ""
+
+                # check for unordered list items
+                elif stripped_line.startswith("- "):
+                    if not in_unordered_list:
+                        if in_ordered_list:  # close ordered list if open
+                            html_content += "</ol>\n"
+                            in_ordered_list = False
+                        if in_paragraph:  # closr paragraph if open
+                            lines_in_paragraph = "\n\t<br />\n\t".join(
+                                current_paragraph.split("\n"))
+                            html_content += f"<p>\n\t\
+                                {lines_in_paragraph}\n</p>\n"
+                            in_paragraph = False
+                            current_paragraph = ""
+                        html_content += "<ul>\n"
+                        in_unordered_list = True
+                    list_item = stripped_line[2:].strip()
+                    html_content += f"  <li>{list_item}</li>\n"
+
+                # check for ordered list items
+                elif stripped_line.startswith("* "):
+                    if not in_ordered_list:
+                        if in_unordered_list:  # close unordered list if open
+                            html_content += "</ul>\n"
+                            in_unordered_list = False
+                        if in_paragraph:  # close paragraph
+                            lines_in_paragraph = "\n\t<br />\n\t".join(
+                                current_paragraph.split("\n"))
+                            html_content += f"<p>\n\t\
+                                            {lines_in_paragraph}\n</p>\n"
+                            in_paragraph = False
+                            current_paragraph = ""
+                        html_content += "<ol>\n"
+                        in_ordered_list = True
+                    list_item = stripped_line[2:].strip()
+                    html_content += f"  <li>{list_item}</li>\n"
+
+                # check for paragraph text
+                else:
+                    if stripped_line:  # non-empty line
+                        if not in_paragraph:
+                            # if we encounter a non-list and non-heading line,
+                            # we are in a list, close the list
+                            if in_unordered_list:
+                                html_content += "</ul>\n"
+                                in_unordered_list = False
+                            if in_ordered_list:
+                                html_content += "</ol>\n"
+                                in_ordered_list = False
+                            in_paragraph = True
+                            current_paragraph = stripped_line
+                        else:
+                            current_paragraph += f"\n{stripped_line}"
+                    else:  # empty line indicates the end of a paragraph
+                        if in_paragraph:
+                            # split the paragraph text into lines
+                            # and indent each line
+                            lines_in_paragraph = "\n\t<br />\n\t".join(
+                                current_paragraph.split("\n"))
+                            html_content += f"<p>\n\t\
+                                            {lines_in_paragraph}\n</p>\n"
+                            in_paragraph = False
+                            current_paragraph = ""
+
+            # close any remaining open lists or paragraphs
+            # at the end of the file
+            if in_unordered_list:
+                html_content += "</ul>\n"
+            if in_ordered_list:
+                html_content += "</ol>\n"
+            if in_paragraph:
+                lines_in_paragraph = "\n\t<br />\n\t".join(
+                    current_paragraph.split("\n"))
+                html_content += f"<p>\n\t{lines_in_paragraph}\n</p>\n"
+
+            # write the html content to the html_file
+            with open(html_file, 'w') as html:
+                html.write(html_content)
+
+    except Exception as e:
+        sys.stderr.write(f"Error: {e}\n")
+        sys.exit(1)
+
+    # if all is good, exit with code 0
+    sys.exit(0)
