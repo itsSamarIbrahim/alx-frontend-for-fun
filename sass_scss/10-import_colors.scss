@@ -1,0 +1,15 @@
+/* This file imports color variables and assigns them to classes */
+
+@import '10-colors';
+
+.red {
+    color: $red;
+}
+
+.green {
+    color: $green;
+}
+
+.blue {
+    color: $blue;
+}
