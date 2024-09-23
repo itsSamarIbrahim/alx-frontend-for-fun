@@ -22,9 +22,9 @@ h1 {
 @media screen and (max-width: 320px) {
     h1 {
         font-size: 14px; // Font size for screens < 320px
-    }
 
-    &.small {
-        color: #1D1D1D; // Text color for h1.small on small screens
+        &.small {
+            color: #1D1D1D; // Text color for h1.small on small screens
+        }
     }
 }
