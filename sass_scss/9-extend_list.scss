@@ -1,0 +1,15 @@
+/* This file assigns styles using the @extend directive */
+.info {
+    font-size: 12px;
+}
+
+// Extend .info styles for .success and .warning classes
+.success {
+    @extend .info; // Inherit font size from .info
+    color: #00FF00;
+}
+
+.warning {
+    @extend .info;
+    color: #FF0000;
+}
