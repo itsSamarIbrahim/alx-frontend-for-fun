@@ -1,0 +1,7 @@
+/* This file creates column classes with varying widths */
+
+@for $i from 1 through 4 {
+    .col-#{$i} {
+        width: 100% / $i; // Calculate width based on the column number
+    }
+}
