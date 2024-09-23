@@ -1,0 +1,9 @@
+/* This file assigns text colors using nested declarations with child selectors */
+
+body {
+    color: #3D3D3D;
+
+    > .red {
+        color: #FF0000; // Text color for .red class that is a first child of body
+    }
+}
