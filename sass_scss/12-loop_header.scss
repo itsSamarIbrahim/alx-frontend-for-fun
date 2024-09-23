@@ -1,0 +1,7 @@
+/* This file creates header tags with font sizes based on their levels */
+
+@for $i from 1 through 5 {
+    h#{$i} {
+        font-size: #{$i}px; //Set the font size equal to the level number
+    }
+}
