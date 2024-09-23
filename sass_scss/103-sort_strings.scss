@@ -1,0 +1,8 @@
+// Define the list of names to sort
+$list_to_sort: john anna zoe kim felicia carrie;
+
+// Function to sort the list
+$sorted_list: sort($list_to_sort);
+
+// Output the sorted list to the debug log
+@debug $sorted_list
