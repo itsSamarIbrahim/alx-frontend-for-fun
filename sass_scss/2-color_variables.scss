@@ -1,0 +1,19 @@
+/* This file assigns text and background colors using Sass variables */
+
+// Define color variables
+$text-color: #3D3D3D;
+$background-color: #6D6D6D;
+
+// Assign the colors to body, p, and h2 tags
+body {
+    color: $text-color;
+    background-color: $background-color;
+}
+
+p {
+    color: $text-color;
+}
+
+h2 {
+    background-color: $background-color;
+}
