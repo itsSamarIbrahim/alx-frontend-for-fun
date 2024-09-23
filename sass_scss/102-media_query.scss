@@ -1,0 +1,30 @@
+/* This file sets font sizes and colors for h1 tags based on screen width */
+
+h1 {
+    font-size: 20px;
+}
+
+// Media query for screens smaller than 960px
+@media screen and (max-width: 960px) {
+    h1 {
+        font-size: 18px; // Font size for screens < 960px
+    }
+}
+
+// Media query for screens smaller than 640px
+@media screen and (max-width: 640px) {
+    h1 {
+        font-size: 16px; // Font size for screens < 640px
+    }
+}
+
+// Media query for screens smaller than 320px
+@media screen and (max-width: 320px) {
+    h1 {
+        font-size: 14px; // Font size for screens < 320px
+    }
+
+    h1.small {
+        color: #1D1D1D; // Text color for h1.small on small screens
+    }
+}
