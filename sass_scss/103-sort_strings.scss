@@ -1,3 +1,5 @@
-@import '103-sort_list';
+@import "103-sort_list";
+@import 'func';
 
-@debug $list_to_sort;
+$sorted: sort($lists);
+@debug $sorted;
